@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block title %}DB Sync{% endblock %}
+{% block content %}
+<h2>Database sync across VMs</h2>
+<p class="hint">productdb (product VM) holds the master product data. cartdb (cart VM) and orderdb (order VM) keep their own copies, updated by an instant push on every change plus a full pull every 30 seconds.</p>
+<div class="sync-banner {{ 'ok' if in_sync else 'bad' }}">{% if in_sync %}✅ All databases are IN SYNC{% else %}⚠️ Databases are NOT in sync yet (or a service is down){% endif %}</div>
+<div class="dbcards">
+{% for d in dbs %}<div class="panel">
+  <div class="cat">{{ d.name }}</div>
+  {% if d.ok %}
+  <h3 style="margin:6px 0">{{ d.data.database }} <span class="hint">· {{ d.data.role }}</span></h3>
+  <p class="hint">Table: {{ d.data.table }} · {{ d.data.count }} products</p>
+  <p>Checksum: <strong class="mono">{{ d.data.checksum }}</strong></p>
+  <p class="hint">Last product change: {{ d.data.last_updated }}</p>
+  {% if d.data.last_sync %}<p class="hint">Last sync: {{ d.data.last_sync.time }} · {{ d.data.last_sync.how }}</p>{% endif %}
+  {% else %}<p><span class="status DECLINED">DOWN</span></p>{% endif %}
+</div>{% endfor %}
+</div>
+<table><tr><th>Product</th>{% for d in dbs %}<th>{{ d.data.database or d.name }} (price / stock)</th>{% endfor %}<th>Match</th></tr>
+{% for r in rows %}<tr><td>{{ r.name }}</td>
+{% for c in r.cells %}<td class="{{ '' if r.same else 'diff' }}">{% if c %}₹{{ '%.0f'|format(c.price) }} / {{ c.stock }}{% else %}missing{% endif %}</td>{% endfor %}
+<td>{% if r.same %}<span class="status SUCCESS">✓</span>{% else %}<span class="status DECLINED">✗</span>{% endif %}</td></tr>{% endfor %}
+</table>
+{% endblock %}

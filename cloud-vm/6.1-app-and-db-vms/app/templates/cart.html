@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block title %}Cart{% endblock %}
+{% block content %}
+<h2>Your Cart</h2>
+{% if items %}
+<table><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th><th></th></tr>
+{% for i in items %}
+<tr>
+  <td>{{ i.product.icon }} {{ i.product.name }}</td>
+  <td>₹{{ '%.0f'|format(i.product.price) }}</td>
+  <td><form method="post" action="{{ url_for('update_cart', pid=i.product.id) }}" style="display:flex;gap:6px">
+      <input class="qty" type="number" name="quantity" value="{{ i.quantity }}" min="0"><button class="btn-light btn">Update</button></form></td>
+  <td>₹{{ '%.0f'|format(i.subtotal) }}</td>
+  <td><form method="post" action="{{ url_for('remove_from_cart', pid=i.product.id) }}"><button class="btn btn-light">Remove</button></form></td>
+</tr>
+{% endfor %}</table>
+<div class="total">Total: ₹{{ '%.0f'|format(total) }}</div>
+<div style="text-align:right"><a class="btn" href="{{ url_for('checkout') }}">Proceed to Checkout →</a></div>
+{% else %}<p>Your cart is empty. <a href="{{ url_for('index') }}">Start shopping</a></p>{% endif %}
+{% endblock %}

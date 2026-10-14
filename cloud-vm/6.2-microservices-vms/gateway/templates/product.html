@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('index') }}">← Back to products</a></p>
+<div class="detail">
+  <div class="icon">{{ product.icon }}</div>
+  <div>
+    <div class="cat">{{ product.category }}</div>
+    <h1>{{ product.name }}</h1>
+    <p class="price" style="font-size:1.6rem">₹{{ '%.0f'|format(product.price) }}</p>
+    <p>{{ product.description }}</p>
+    <p class="hint">{% if product.stock > 0 %}In stock: {{ product.stock }}{% else %}Out of stock{% endif %}</p>
+    <form method="post" action="{{ url_for('add_to_cart', pid=product.id) }}">
+      <label>Quantity</label><input class="qty" type="number" name="quantity" value="1" min="1">
+      <p><button {% if product.stock <= 0 %}disabled{% endif %}>Add to cart</button></p>
+    </form>
+  </div>
+</div>
+{% endblock %}

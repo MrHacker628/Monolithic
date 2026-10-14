@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block title %}Orders{% endblock %}
+{% block content %}
+<h2>Order History</h2>
+{% if orders %}
+<table><tr><th>Order ID</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr>
+{% for o in orders %}<tr><td><a href="{{ url_for('order_success', order_id=o.id) }}">{{ o.id }}</a></td><td>{{ o.customer_name }}</td>
+<td>₹{{ '%.0f'|format(o.total) }}</td><td><span class="status {{ o.status }}">{{ o.status }}</span></td><td>{{ o.created_at }}</td></tr>{% endfor %}
+</table>
+{% else %}<p>No orders yet.</p>{% endif %}
+{% endblock %}

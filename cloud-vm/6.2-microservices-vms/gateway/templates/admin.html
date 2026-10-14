@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}Admin{% endblock %}
+{% block content %}
+<h2>Product admin</h2>
+<p class="hint">Changes are saved in productdb on the product VM, then synced to cartdb and orderdb. Check the <a href="{{ url_for('sync_status') }}">DB Sync</a> page afterwards.</p>
+<table class="inline"><tr><th>Product</th><th>Price (₹)</th><th>Stock</th><th>Last updated</th><th></th></tr>
+{% for p in products %}<tr>
+<td>{{ p.icon }} {{ p.name }}<form id="f{{ p.id }}" method="post"><input type="hidden" name="id" value="{{ p.id }}"></form></td>
+<td><input form="f{{ p.id }}" type="number" name="price" value="{{ '%.0f'|format(p.price) }}" min="1" step="1"></td>
+<td><input form="f{{ p.id }}" type="number" name="stock" value="{{ p.stock }}" min="0"></td>
+<td class="hint">{{ p.updated_at }}</td>
+<td><button form="f{{ p.id }}">Save</button></td></tr>{% endfor %}
+</table>
+{% endblock %}

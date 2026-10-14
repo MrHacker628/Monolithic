@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block title %}Order {{ order.id }}{% endblock %}
+{% block content %}
+<div class="panel success-box">
+  <div class="big">✅</div>
+  <h2>Payment successful!</h2>
+  <p>Thank you, {{ order.customer_name }}. Your order <strong>{{ order.id }}</strong> has been placed.</p>
+  <p>Payment ID: <strong>{{ payment.id }}</strong> · Card ending {{ payment.card_last4 }} · <span class="status {{ payment.status }}">{{ payment.status }}</span></p>
+</div>
+<h3>Items</h3>
+<table><tr><th>Product</th><th>Price</th><th>Qty</th></tr>
+{% for i in items %}<tr><td>{{ i.name }}</td><td>₹{{ '%.0f'|format(i.price) }}</td><td>{{ i.quantity }}</td></tr>{% endfor %}
+</table>
+<div class="total">Total paid: ₹{{ '%.0f'|format(order.total) }}</div>
+<a class="btn" href="{{ url_for('index') }}">Continue shopping</a>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block title %}Service unavailable{% endblock %}
+{% block content %}
+<div class="panel success-box"><div class="big">⚠️</div><h2>Service unavailable</h2><p>{{ message }}</p>
+<a class="btn" href="{{ url_for('services') }}">Check service status</a></div>
+{% endblock %}

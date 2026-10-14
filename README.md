@@ -120,3 +120,10 @@ or with Docker: `docker compose up`.
 | Failure | One bug can bring the whole app down | If one service fails, the others keep running |
 | Data | One shared database | Each service owns its data |
 | Best for | Small apps and small teams | Large apps and teams working in parallel |
+
+## 3. Cloud deployment on Google Cloud VMs (Task 6)
+
+See [`cloud-vm/README.md`](cloud-vm/README.md) for the full step-by-step guide.
+
+- **6.1** ([`cloud-vm/6.1-app-and-db-vms`](cloud-vm/6.1-app-and-db-vms)): the app runs on one VM and MySQL runs on a second VM. They communicate over the **internal IP**.
+- **6.2** ([`cloud-vm/6.2-microservices-vms`](cloud-vm/6.2-microservices-vms)): product, cart and order services, each on **its own VM with its own MySQL database**. Only the gateway VM has an external IP, and product data **syncs** between the databases.

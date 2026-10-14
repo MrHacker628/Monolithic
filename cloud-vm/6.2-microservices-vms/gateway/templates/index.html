@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% block title %}Products{% endblock %}
+{% block content %}
+<h2>{% if q %}Results for "{{ q }}"{% else %}All Products{% endif %} <span class="hint">({{ products|length }} items)</span></h2>
+<div class="chips">
+  <a class="chip {% if not category %}active{% endif %}" href="{{ url_for('index', q=q) }}">All</a>
+  {% for c in categories %}<a class="chip {% if c == category %}active{% endif %}" href="{{ url_for('index', q=q, category=c) }}">{{ c }}</a>{% endfor %}
+</div>
+{% if products %}
+<div class="grid">
+{% for p in products %}
+  <div class="card">
+    <div class="icon">{{ p.icon }}</div>
+    <div class="cat">{{ p.category }}</div>
+    <h3>{{ p.name }}</h3>
+    <div class="price">₹{{ '%.0f'|format(p.price) }}</div>
+    <div class="hint">{% if p.stock > 0 %}In stock: {{ p.stock }}{% else %}<span style="color:var(--err)">Out of stock</span>{% endif %}</div>
+    <div class="actions">
+      <a class="btn btn-light" href="{{ url_for('product_detail', pid=p.id) }}">View</a>
+      <form method="post" action="{{ url_for('add_to_cart', pid=p.id) }}"><button style="width:100%" {% if p.stock <= 0 %}disabled{% endif %}>Add</button></form>
+    </div>
+  </div>
+{% endfor %}
+</div>
+{% else %}<p>No products match your search.</p>{% endif %}
+{% endblock %}
