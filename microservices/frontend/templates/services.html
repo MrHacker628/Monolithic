@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block title %}Services{% endblock %}
+{% block content %}
+<h2>Microservices Status</h2>
+<p class="hint">The frontend has no database. Every page is built from REST calls to these independent services, each with its own database and port.</p>
+<table><tr><th>Service</th><th>URL</th><th>Status</th></tr>
+{% for s in services %}<tr><td><strong>{{ s.name }}</strong></td><td>{{ s.url }}</td>
+<td><span class="status {{ 'SUCCESS' if s.up else 'DECLINED' }}">{{ 'UP' if s.up else 'DOWN' }}</span></td></tr>{% endfor %}
+</table>
+{% endblock %}

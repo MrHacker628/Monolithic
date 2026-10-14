@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}ShopEasy{% endblock %} · ShopEasy</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body>
+<header><div class="nav">
+  <a class="logo" href="{{ url_for('index') }}">Shop<span>Easy</span></a>
+  <span class="badge">{{ architecture }}</span>
+  <form action="{{ url_for('index') }}" method="get">
+    <input name="q" placeholder="Search products..." value="{{ q or '' }}"><button>Search</button>
+  </form>
+  <div class="nav-links">
+    <a href="{{ url_for('orders') }}">Orders</a>
+    <a href="{{ url_for('view_cart') }}">🛒 Cart<span class="count">{{ cart_count }}</span></a>
+  </div>
+</div></header>
+<main>
+  {% with msgs = get_flashed_messages(with_categories=true) %}{% for cat, m in msgs %}<div class="flash {{ cat }}">{{ m }}</div>{% endfor %}{% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer>ShopEasy · {{ architecture }} architecture demo</footer>
+</body></html>
