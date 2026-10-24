@@ -11,7 +11,7 @@ MAX_REPLICAS=3                           # scaling rule: maximum instances
 TARGET_CPU=0.60                          # scale out when average CPU > 60%
 
 # Resource names
-TEMPLATE=ms-template
+TEMPLATE=ms-template-v2                   # v2 = opens ports 5001-5003 in the COS host firewall
 MIG=ms-mig
 HC=ms-hc                                 # load balancer health check (checks each service's port)
 HC_AUTOHEAL=ms-hc-autoheal               # MIG auto-healing health check

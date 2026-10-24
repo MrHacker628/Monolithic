@@ -17,6 +17,8 @@ echo "==> Writing the VM startup script"
 cat > startup.sh <<EOF
 #!/bin/bash
 # Runs on every VM in the group at boot (Container-Optimized OS has Docker built in).
+# COS has its own host firewall that blocks incoming ports except SSH: open the 3 service ports.
+iptables -w -A INPUT -p tcp -m multiport --dports 5001,5002,5003 -j ACCEPT
 export DOCKER_CONFIG=/tmp/docker-config
 TOKEN=\$(curl -s -H "Metadata-Flavor: Google" \
   http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token \
@@ -57,6 +59,13 @@ gcloud compute instance-groups managed describe "$MIG" --region="$REGION" >/dev/
   gcloud compute instance-groups managed create "$MIG" --region="$REGION" \
     --template="$TEMPLATE" --size="$MIN_REPLICAS" \
     --health-check="$HC_AUTOHEAL" --initial-delay=180
+
+CURRENT=$(gcloud compute instance-groups managed describe "$MIG" --region="$REGION" --format="value(instanceTemplate.basename())")
+if [ "$CURRENT" != "$TEMPLATE" ]; then
+  echo "==> Rolling update: replacing VMs from '$CURRENT' with VMs from '$TEMPLATE'"
+  gcloud compute instance-groups managed rolling-action start-update "$MIG" --region="$REGION" \
+    --version=template="$TEMPLATE" --type=proactive --max-surge=3 --max-unavailable=0
+fi
 
 echo "==> Named ports: product=5001, cart=5002, order=5003"
 gcloud compute instance-groups managed set-named-ports "$MIG" --region="$REGION" \

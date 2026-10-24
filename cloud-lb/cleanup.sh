@@ -15,7 +15,7 @@ q gcloud compute target-http-proxies delete "$PROXY"
 q gcloud compute url-maps delete "$URL_MAP"
 for s in $SERVICES; do q gcloud compute backend-services delete "ms-${s}-bs" --global; done
 q gcloud compute instance-groups managed delete "$MIG" --region="$REGION"
-q gcloud compute instance-templates delete "$TEMPLATE"
+q gcloud compute instance-templates delete "$TEMPLATE" ms-template
 q gcloud compute health-checks delete "$HC" "$HC_AUTOHEAL"
 q gcloud compute firewall-rules delete ms-allow-lb
 q gcloud compute addresses delete "$IP_NAME" --global
