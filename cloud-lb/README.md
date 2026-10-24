@@ -33,6 +33,7 @@ cd ms-lb/cloud-lb
 ```
 
 ### Step 1: Build the images and push them to the registry (about 3 min)
+If `docker push` fails with **connection refused**, use `bash 1b-build-with-cloud-build.sh` instead (Cloud Build).
 ```bash
 bash 1-build-and-push.sh
 ```
