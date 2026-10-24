@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>ShopEasy architecture</title>
+<style>
+body{margin:0;background:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+svg text{font-family:inherit}
+.t{font-size:15px;font-weight:700;fill:#1d2433}.s{font-size:12.5px;fill:#475467}.m{font-size:12px;fill:#475467;font-family:ui-monospace,Consolas,monospace}
+.g{font-size:13px;font-weight:700;letter-spacing:.02em}
+</style></head>
+<body>
+<svg width="1440" height="860" viewBox="0 0 1440 860" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#475467"/></marker>
+  <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#4f46e5"/></marker>
+</defs>
+
+<text x="30" y="36" style="font-size:22px;font-weight:800;fill:#1d2433">ShopEasy: 3 microservices behind a GCP HTTP Load Balancer with an autoscaling MIG</text>
+<text x="30" y="58" class="s">Project shopeasy-lb · region asia-south1 (Mumbai) · traffic flows left → right</text>
+
+<!-- clients -->
+<rect x="30" y="140" width="190" height="80" rx="12" fill="#f2f4f7" stroke="#d0d5dd"/>
+<text x="125" y="173" text-anchor="middle" class="t">👤 Users (browser)</text>
+<text x="125" y="195" text-anchor="middle" class="s">http://&lt;LB IP&gt;/</text>
+<rect x="30" y="270" width="190" height="80" rx="12" fill="#fff7ed" stroke="#fdba74"/>
+<text x="125" y="303" text-anchor="middle" class="t">🐝 Locust load test</text>
+<text x="125" y="325" text-anchor="middle" class="s">Cloud Shell · 150 users</text>
+<path d="M220 180 L268 220" stroke="#4f46e5" stroke-width="2" fill="none" marker-end="url(#ab)"/>
+<path d="M220 310 L268 260" stroke="#4f46e5" stroke-width="2" fill="none" marker-end="url(#ab)"/>
+<text x="232" y="246" class="s" style="font-weight:700;fill:#4f46e5">HTTP :80</text>
+
+<!-- load balancer -->
+<rect x="270" y="90" width="350" height="400" rx="16" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1.5"/>
+<text x="290" y="116" class="g" fill="#4338ca">GLOBAL EXTERNAL HTTP LOAD BALANCER</text>
+<rect x="295" y="132" width="300" height="58" rx="10" fill="#fff" stroke="#c7d2fe"/>
+<text x="310" y="156" class="t">Frontend: forwarding rule</text>
+<text x="310" y="176" class="m">ms-forwarding-rule · static IP ms-ip :80</text>
+<path d="M445 190 L445 206" stroke="#475467" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="295" y="208" width="300" height="50" rx="10" fill="#fff" stroke="#c7d2fe"/>
+<text x="310" y="230" class="t">Target HTTP proxy</text>
+<text x="310" y="248" class="m">ms-proxy</text>
+<path d="M445 258 L445 274" stroke="#475467" stroke-width="1.6" marker-end="url(#a)"/>
+<rect x="295" y="276" width="300" height="196" rx="10" fill="#fff" stroke="#c7d2fe"/>
+<text x="310" y="300" class="t">URL map (path routing)</text>
+<text x="310" y="318" class="m">ms-urlmap</text>
+<text x="310" y="350" class="m">/products, /products/*  → product</text>
+<text x="310" y="374" class="m">/cart, /cart/*          → cart</text>
+<text x="310" y="398" class="m">/orders, /orders/*      → order</text>
+<text x="310" y="422" class="m">/  (web page, default)  → product</text>
+<text x="310" y="454" class="s">One IP for the whole application</text>
+
+<!-- backend services -->
+<text x="672" y="116" class="g" fill="#344054">BACKEND SERVICES</text>
+<g>
+<rect x="670" y="132" width="250" height="78" rx="10" fill="#eef2ff" stroke="#a5b4fc"/>
+<text x="685" y="156" class="t">ms-product-bs</text>
+<text x="685" y="176" class="m">named port product = 5001</text>
+<text x="685" y="196" class="s">mode UTILIZATION · max 80%</text>
+<rect x="670" y="232" width="250" height="78" rx="10" fill="#fff7ed" stroke="#fdba74"/>
+<text x="685" y="256" class="t">ms-cart-bs</text>
+<text x="685" y="276" class="m">named port cart = 5002</text>
+<text x="685" y="296" class="s">mode UTILIZATION · max 80%</text>
+<rect x="670" y="332" width="250" height="78" rx="10" fill="#ecfdf3" stroke="#6ce9a6"/>
+<text x="685" y="356" class="t">ms-order-bs</text>
+<text x="685" y="376" class="m">named port order = 5003</text>
+<text x="685" y="396" class="s">mode UTILIZATION · max 80%</text>
+</g>
+<path d="M595 352 L668 172" stroke="#475467" stroke-width="1.6" fill="none" marker-end="url(#a)"/>
+<path d="M595 375 L668 272" stroke="#475467" stroke-width="1.6" fill="none" marker-end="url(#a)"/>
+<path d="M595 398 L668 372" stroke="#475467" stroke-width="1.6" fill="none" marker-end="url(#a)"/>
+<rect x="670" y="432" width="250" height="58" rx="10" fill="#f9fafb" stroke="#d0d5dd" stroke-dasharray="5 4"/>
+<text x="685" y="456" class="t">Health check ms-hc</text>
+<text x="685" y="476" class="m">GET /health on serving port</text>
+
+<!-- MIG -->
+<rect x="975" y="90" width="440" height="560" rx="16" fill="#f9fafb" stroke="#98a2b3" stroke-width="1.5"/>
+<text x="995" y="116" class="g" fill="#344054">REGIONAL MANAGED INSTANCE GROUP · ms-mig</text>
+<rect x="995" y="130" width="400" height="62" rx="10" fill="#fef3f2" stroke="#fda29b"/>
+<text x="1010" y="154" class="t">📈 Autoscaler</text>
+<text x="1010" y="176" class="m">min 1 · max 3 · scale out when CPU &gt; 60%</text>
+
+<!-- VM template -->
+<g id="vm">
+</g>
+<rect x="995" y="210" width="400" height="128" rx="12" fill="#fff" stroke="#667085" stroke-width="1.5"/>
+<text x="1010" y="234" class="t">VM 1 · asia-south1-a</text>
+<text x="1385" y="234" text-anchor="end" class="s">always running (min 1)</text>
+<rect x="1010" y="248" width="118" height="74" rx="8" fill="#eef2ff" stroke="#a5b4fc"/>
+<text x="1069" y="276" text-anchor="middle" class="t" style="font-size:13px">product</text>
+<text x="1069" y="298" text-anchor="middle" class="m">:5001</text>
+<rect x="1137" y="248" width="118" height="74" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+<text x="1196" y="276" text-anchor="middle" class="t" style="font-size:13px">cart</text>
+<text x="1196" y="298" text-anchor="middle" class="m">:5002</text>
+<rect x="1264" y="248" width="118" height="74" rx="8" fill="#ecfdf3" stroke="#6ce9a6"/>
+<text x="1323" y="276" text-anchor="middle" class="t" style="font-size:13px">order</text>
+<text x="1323" y="298" text-anchor="middle" class="m">:5003</text>
+
+<rect x="995" y="352" width="400" height="128" rx="12" fill="#fff" stroke="#667085" stroke-width="1.5" stroke-dasharray="7 5"/>
+<text x="1010" y="376" class="t">VM 2 · asia-south1-b</text>
+<text x="1385" y="376" text-anchor="end" class="s">added by autoscaler</text>
+<rect x="1010" y="390" width="118" height="74" rx="8" fill="#eef2ff" stroke="#a5b4fc"/>
+<text x="1069" y="418" text-anchor="middle" class="t" style="font-size:13px">product</text>
+<text x="1069" y="440" text-anchor="middle" class="m">:5001</text>
+<rect x="1137" y="390" width="118" height="74" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+<text x="1196" y="418" text-anchor="middle" class="t" style="font-size:13px">cart</text>
+<text x="1196" y="440" text-anchor="middle" class="m">:5002</text>
+<rect x="1264" y="390" width="118" height="74" rx="8" fill="#ecfdf3" stroke="#6ce9a6"/>
+<text x="1323" y="418" text-anchor="middle" class="t" style="font-size:13px">order</text>
+<text x="1323" y="440" text-anchor="middle" class="m">:5003</text>
+
+<rect x="995" y="494" width="400" height="128" rx="12" fill="#fff" stroke="#667085" stroke-width="1.5" stroke-dasharray="7 5"/>
+<text x="1010" y="518" class="t">VM 3 · asia-south1-c</text>
+<text x="1385" y="518" text-anchor="end" class="s">added by autoscaler (max 3)</text>
+<rect x="1010" y="532" width="118" height="74" rx="8" fill="#eef2ff" stroke="#a5b4fc"/>
+<text x="1069" y="560" text-anchor="middle" class="t" style="font-size:13px">product</text>
+<text x="1069" y="582" text-anchor="middle" class="m">:5001</text>
+<rect x="1137" y="532" width="118" height="74" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+<text x="1196" y="560" text-anchor="middle" class="t" style="font-size:13px">cart</text>
+<text x="1196" y="582" text-anchor="middle" class="m">:5002</text>
+<rect x="1264" y="532" width="118" height="74" rx="8" fill="#ecfdf3" stroke="#6ce9a6"/>
+<text x="1323" y="560" text-anchor="middle" class="t" style="font-size:13px">order</text>
+<text x="1323" y="582" text-anchor="middle" class="m">:5003</text>
+
+<!-- backend -> MIG -->
+<path d="M920 171 C950 171 950 330 973 380" stroke="#4f46e5" stroke-width="2" fill="none" marker-end="url(#ab)"/>
+<path d="M920 271 C945 271 950 360 973 380" stroke="#c2410c" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M920 371 C945 371 950 380 973 380" stroke="#027a48" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<text x="672" y="512" class="s" style="font-weight:600">All 3 backend services use the same MIG;</text>
+<text x="672" y="530" class="s" style="font-weight:600">the LB spreads requests over ALL its VMs.</text>
+<text x="1010" y="640" class="s">Each VM: order → cart → product via localhost (stateless)</text>
+
+<!-- bottom row -->
+<rect x="270" y="560" width="350" height="96" rx="12" fill="#f0f9ff" stroke="#7cd4fd"/>
+<text x="290" y="588" class="t">📊 Cloud Monitoring &amp; Logging</text>
+<text x="290" y="610" class="s">CPU utilisation per instance (autoscaler input)</text>
+<text x="290" y="628" class="s">LB request logs · autoscaler decisions</text>
+<text x="290" y="646" class="s">MIG size over time</text>
+
+<rect x="670" y="560" width="250" height="96" rx="12" fill="#fff" stroke="#d0d5dd"/>
+<text x="685" y="588" class="t">Instance template</text>
+<text x="685" y="608" class="m">ms-template</text>
+<text x="685" y="628" class="s">e2-small · Container-Optimized OS</text>
+<text x="685" y="646" class="s">startup script runs 3 containers</text>
+<path d="M920 608 L973 608" stroke="#475467" stroke-width="1.6" marker-end="url(#a)"/>
+
+<rect x="975" y="690" width="440" height="110" rx="12" fill="#fdf4ff" stroke="#e9a8f9"/>
+<text x="995" y="718" class="t">📦 Artifact Registry · shopeasy-repo</text>
+<text x="995" y="742" class="m">asia-south1-docker.pkg.dev/&lt;project&gt;/shopeasy-repo</text>
+<text x="995" y="764" class="m">product-service:v1 · cart-service:v1 · order-service:v1</text>
+<text x="995" y="786" class="s">built &amp; pushed from Cloud Shell (docker build / push)</text>
+<path d="M1195 690 L1195 654" stroke="#a21caf" stroke-width="2" marker-end="url(#a)"/>
+<text x="1205" y="676" class="s" style="fill:#a21caf;font-weight:600">image pull at boot</text>
+
+<rect x="270" y="690" width="650" height="110" rx="12" fill="#fff" stroke="#d0d5dd" stroke-dasharray="5 4"/>
+<text x="290" y="718" class="t">🔒 Firewall rule ms-allow-lb</text>
+<text x="290" y="740" class="s">Allows tcp:5001-5003 only from Google load balancer / health-check ranges</text>
+<text x="290" y="760" class="m">130.211.0.0/22, 35.191.0.0/16 → VMs tagged ms-backend</text>
+<text x="290" y="784" class="s">High availability: regional MIG spreads VMs over zones a/b/c; auto-healing replaces unhealthy VMs.</text>
+<path d="M620 608 L668 608" stroke="#0086c9" stroke-width="1.6" stroke-dasharray="4 3" marker-start="url(#a)"/>
+</svg>
+</body></html>

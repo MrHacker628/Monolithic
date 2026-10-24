@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ShopEasy · Load-balanced microservices</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--text:#1d2433;--muted:#667085;--primary:#4f46e5;--border:#e4e7ec;--ok:#027a48;--okbg:#ecfdf3;--err:#b42318;--errbg:#fef3f2}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+.nav{max-width:1200px;margin:auto;display:flex;gap:14px;align-items:center;padding:12px 16px;flex-wrap:wrap}
+.logo{font-weight:800;font-size:1.3rem}.logo span{color:var(--primary)}
+.badge{font-size:.72rem;background:#eef2ff;color:var(--primary);padding:3px 9px;border-radius:99px;font-weight:600}
+.nav input{flex:1;min-width:180px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:.95rem}
+main{max-width:1200px;margin:auto;padding:20px 16px;display:grid;grid-template-columns:1fr 360px;gap:20px}
+button{background:var(--primary);color:#fff;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem}
+button.light{background:#fff;color:var(--text);border:1px solid var(--border)}
+button:disabled{opacity:.5;cursor:default}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.card,.panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
+.panel{margin-bottom:16px}.panel h3{margin:0 0 10px;font-size:1rem}
+.icon{font-size:2.6rem;text-align:center;background:#f2f4f7;border-radius:10px;padding:14px 0}
+.cat{font-size:.72rem;color:var(--muted);text-transform:uppercase;margin-top:8px}
+.card h4{margin:4px 0;font-size:.95rem}.price{font-weight:700;margin-bottom:8px}
+.row{display:flex;justify-content:space-between;gap:8px;font-size:.9rem;margin:4px 0}
+.muted{color:var(--muted);font-size:.8rem}
+.msg{padding:8px 10px;border-radius:8px;font-size:.85rem;margin-top:8px}.ok{background:var(--okbg);color:var(--ok)}.err{background:var(--errbg);color:var(--err)}
+input.f{width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;margin:4px 0 8px;font-size:.9rem}
+table{width:100%;border-collapse:collapse;font-size:.8rem}td,th{padding:5px 4px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:600}
+.vm{font-family:ui-monospace,Consolas,monospace;font-size:.78rem}
+.bar{height:10px;background:var(--primary);border-radius:4px}
+.svc{display:inline-block;padding:1px 6px;border-radius:5px;font-size:.72rem;font-weight:700}
+.s-product{background:#eef2ff;color:#4338ca}.s-cart{background:#fff7ed;color:#c2410c}.s-order{background:#ecfdf3;color:#027a48}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="nav">
+  <div class="logo">Shop<span>Easy</span></div>
+  <span class="badge">HTTP Load Balancer · MIG · Autoscaling</span>
+  <input id="q" placeholder="Search products...">
+</div></header>
+
+<main>
+<section>
+  <div class="grid" id="products"></div>
+</section>
+
+<aside>
+  <div class="panel">
+    <h3>🛒 Cart <span class="muted">(priced by cart-service)</span></h3>
+    <div id="cart"><p class="muted">Cart is empty.</p></div>
+  </div>
+
+  <div class="panel">
+    <h3>💳 Checkout <span class="muted">(order-service)</span></h3>
+    <input class="f" id="name" placeholder="Your name" value="Test User">
+    <input class="f" id="card" placeholder="Card number" value="4242 4242 4242 4242">
+    <button id="pay" disabled>Place order</button>
+    <div id="orderMsg"></div>
+  </div>
+
+  <div class="panel">
+    <h3>⚖️ Load balancer test</h3>
+    <p class="muted">Sends 30 requests to each microservice through the load balancer and counts which VM answered.</p>
+    <button id="lbtest">Run 30 × 3 requests</button>
+    <div id="lbResult"></div>
+  </div>
+
+  <div class="panel">
+    <h3>📡 Request log <span class="muted">(which VM served each call)</span></h3>
+    <table><thead><tr><th>Service</th><th>Path</th><th>Served by VM</th></tr></thead><tbody id="log"></tbody></table>
+  </div>
+</aside>
+</main>
+
+<script>
+const cart = {};          // product_id -> quantity (kept in the browser = stateless services)
+let catalogue = [];
+
+function svcOf(path){ return path.startsWith('/cart') ? 'cart' : path.startsWith('/orders') ? 'order' : 'product'; }
+function log(path, servedBy){
+  const s = svcOf(path), tr = document.createElement('tr');
+  tr.innerHTML = `<td><span class="svc s-${s}">${s}</span></td><td class="vm">${path}</td><td class="vm">${servedBy || '-'}</td>`;
+  const body = document.getElementById('log'); body.prepend(tr);
+  while (body.children.length > 12) body.lastChild.remove();
+}
+async function api(path, body){
+  const r = await fetch(path, body ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {});
+  const data = await r.json().catch(() => ({}));
+  log(path, data.served_by);
+  return {ok: r.ok, data};
+}
+
+async function loadProducts(q=''){
+  const {data} = await api('/products' + (q ? '?q=' + encodeURIComponent(q) : ''));
+  catalogue = data.products || [];
+  document.getElementById('products').innerHTML = catalogue.map(p => `
+    <div class="card"><div class="icon">${p.icon}</div><div class="cat">${p.category}</div>
+    <h4>${p.name}</h4><div class="price">₹${p.price}</div>
+    <button onclick="add(${p.id})">Add to cart</button></div>`).join('') || '<p>No products found.</p>';
+}
+function items(){ return Object.entries(cart).map(([id,q]) => ({product_id:+id, quantity:q})); }
+async function add(id){ cart[id] = (cart[id] || 0) + 1; await refreshCart(); }
+async function change(id, d){ cart[id] += d; if (cart[id] <= 0) delete cart[id]; await refreshCart(); }
+
+async function refreshCart(){
+  const el = document.getElementById('cart'), pay = document.getElementById('pay');
+  if (!items().length){ el.innerHTML = '<p class="muted">Cart is empty.</p>'; pay.disabled = true; return; }
+  const {ok, data} = await api('/cart/quote', {items: items()});
+  if (!ok){ el.innerHTML = `<div class="msg err">${data.error || 'Cart error'}</div>`; return; }
+  el.innerHTML = data.lines.map(l => `<div class="row"><span>${l.icon} ${l.name}</span>
+      <span><button class="light" onclick="change(${l.product_id},-1)">−</button> ${l.quantity}
+      <button class="light" onclick="change(${l.product_id},1)">+</button></span></div>`).join('') + `
+    <div class="row muted"><span>Subtotal</span><span>₹${data.subtotal}</span></div>
+    <div class="row muted"><span>Loyalty discount (${data.discount_pct}%)</span><span>−₹${data.discount}</span></div>
+    <div class="row muted"><span>GST 18%</span><span>₹${data.gst}</span></div>
+    <div class="row muted"><span>Shipping</span><span>₹${data.shipping}</span></div>
+    <div class="row"><strong>Total</strong><strong>₹${data.total}</strong></div>
+    <p class="muted">Priced on VM <span class="vm">${data.served_by}</span></p>`;
+  pay.disabled = false;
+}
+
+document.getElementById('pay').onclick = async () => {
+  const {ok, data} = await api('/orders', {name: document.getElementById('name').value,
+                                           card_number: document.getElementById('card').value, items: items()});
+  const m = document.getElementById('orderMsg');
+  if (ok){
+    m.innerHTML = `<div class="msg ok">✅ <b>${data.order_id}</b> PAID · ₹${data.total}<br>
+      Payment ${data.payment.id} · card •••• ${data.payment.card_last4}<br>
+      Order handled by <span class="vm">${data.served_by}</span></div>`;
+    for (const k in cart) delete cart[k]; refreshCart();
+  } else m.innerHTML = `<div class="msg err">${data.error || 'Order failed'}</div>`;
+};
+
+document.getElementById('lbtest').onclick = async () => {
+  const btn = document.getElementById('lbtest'); btn.disabled = true; btn.textContent = 'Running...';
+  const counts = {}, tests = [['/products'], ['/cart/quote', {items:[{product_id:1, quantity:1}]}],
+                                 ['/orders', {name:'LB test', card_number:'4242424242424242', items:[{product_id:2, quantity:1}]}]];
+  const jobs = [];
+  for (let i = 0; i < 30; i++) for (const [path, body] of tests)
+    jobs.push(api(path, body).then(({data}) => { const vm = data.served_by || 'error'; counts[vm] = (counts[vm] || 0) + 1; }));
+  await Promise.all(jobs);
+  const total = Object.values(counts).reduce((a,b) => a+b, 0);
+  document.getElementById('lbResult').innerHTML = `<table><tr><th>VM</th><th>Requests</th><th></th></tr>` +
+    Object.entries(counts).sort().map(([vm,n]) => `<tr><td class="vm">${vm}</td><td>${n}</td>
+      <td style="width:40%"><div class="bar" style="width:${Math.round(100*n/total)}%"></div></td></tr>`).join('') +
+    `</table><p class="muted">${Object.keys(counts).length} VM(s) answered ${total} requests.</p>`;
+  btn.disabled = false; btn.textContent = 'Run 30 × 3 requests';
+};
+
+let t; document.getElementById('q').oninput = e => { clearTimeout(t); t = setTimeout(() => loadProducts(e.target.value), 250); };
+loadProducts();
+</script>
+</body>
+</html>
